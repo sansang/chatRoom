@@ -6,124 +6,207 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="author" content="sansang">
 <meta name="description" content=" An task">
-<title>chat room</title>
-<link href="http://cdn.bootcss.com/bootstrap/4.0.0-alpha.2/css/bootstrap.min.css" rel="stylesheet">
+    
+<title>Chatting Room</title>
+
+<!-- Bootstrap core CSS -->
+<link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
 /*
- delete by adding bootstrap
- .container{
-    height: 800px;
-    width: 800px;
-    background-color: #E4DEDE;
-    margin: 0 auto;
+ * Base structure
+ */
+html {
+    position: relative;
+    min-height: 100%;
+}
+body {
+    /* Margin bottom by footer height */
+    margin-bottom: 35px;
 }
 
-.col-md-3{
-    float: left;
-    
-    position: relative;
-    min-height: 1px;
-    padding-right: 15px;
-    padding-left: 15px;
+/*
+ * Global add-ons
+ */
+
+.sub-header {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
 }
-.fixed{
-    
-}.row-footer{
-    background-color: #AfAfAf;
-    margin:0px auto;
-    padding: 20px 0px 20px 0px;
- }*/
-.row{
-    text-align: center;
+
+/*
+ * Top navigation
+ * Hide default border to remove 1px line.
+ */
+.navbar-fixed-top {
+    border: 0;
 }
-.container{
-    margin: 0 auto;
-    min-height: 420px;
+
+/*
+ * Sidebar
+ */
+
+/* Hide for mobile, show later */
+.sidebar {
+    display: none;
 }
-footer{
-    bottom: 0px;
-    width: 100%;
-    height:40px;
-    background-color: black;
+@media (min-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0px;
+        bottom: 0;
+        left: 0;
+        z-index: 1000;
+        display: block;
+        padding: 20px;
+        overflow-x: hidden;
+        overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+        background-color: #f5f5f5;
+        border-right: 1px solid #eee;
+    }
+}
+
+/* Sidebar navigation */
+.nav-sidebar {
+    margin-right: -21px; /* 20px padding + 1px border */
+    margin-bottom: 20px;
+    margin-left: -20px;
+}
+.nav-sidebar > li > a {
+    padding-right: 20px;
+    padding-left: 20px;
+}
+.nav-sidebar > .active > a,
+.nav-sidebar > .active > a:hover,
+.nav-sidebar > .active > a:focus {
+    color: #fff;
+    background-color: #428bca;
+}
+
+
+/*
+ * Main content
+ */
+
+.main {
+    padding: 20px;
+}
+@media (min-width: 768px) {
+    .main {
+        padding-right: 40px;
+        padding-left: 40px;
+    }
+}
+.main .page-header {
+    margin-top: 0;
+}
+
+/*
+ * Chatting room footer
+ */
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    width: 90%;
+    /* Set the fixed height of the footer here */
+    height: 35px;
+}
+.footer span{
+    color: #428bca;
+    font-size: 28px;
 }
 </style>
+</head>
+
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <div>
+                <h4>Rooms</h4>
+                <ul class="nav nav-sidebar" id="roomId"></ul>
+            </div>
+            <div>
+                <h4>Users</h4>
+                <ul class="nav nav-sidebar" id="users"></ul>
+            </div>
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <h1 class="page-header">Chatting Room</h1>
+            <div class="row massage">
+                <ul id="conversation"></ul>
+            </div>
+            <footer class="footer">
+                <form class="form-horizontal" role="form">
+                <div class="form-group col-sm-9 col-md-10">
+                    <input class="form-control" id="msg" placeholder="Type massage here..." type="text">
+                </div>
+                <span id="msgSend" class="glyphicon glyphicon-send" aria-hidden="true"></span>
+                </form>
+            </footer>
+        </div>
+    </div>
+</div>
 <script src="https://cdn.socket.io/socket.io-1.4.3.js"></script>
 <script src="http://cdn.bootcss.com/jquery/2.2.0/jquery.js"></script>
 <script>
-    var socket = io.connect('http://localhost:8080');
-    socket.on('connect', function(){
-		//  ask for user's name
-		socket.emit('adduser', prompt("What's your name?"));
-	});
+var socket = io.connect('http://localhost:8080');
+socket.on('connect', function(){
+    //  ask for user's name
+    socket.emit('adduser', prompt("What's your name?"));
+});
+  
+// append messages
+socket.on('updatechat', function (username, data) {
+    $('#conversation').append('<li>'+username + ': <span class="label label-info">' + data + '</span></li><br>');
+});
+            
+// append rooms
+socket.on('updaterooms', function(rooms, current_room) {
+    $('#roomId').empty();
+    $.each(rooms, function(key, value) {
+        console.log(key);
+        if(value == current_room){
+            $('#roomId').append('<li class="active"><a href="#">' + value + '</a></li>');
+         }
+        else {
+            $('#roomId').append('<li><a href="#"  onclick="switchRoom(\''+value+'\')">' + value + '</a></li>');
+         }
+    });
+});
 
-	// append messages
-	socket.on('updatechat', function (username, data) {
-		$('#conversation').append('<b>'+username + ':</b><span class="label label-info">' + data + '</span><br>');
-	});
+function switchRoom(room){
+    socket.emit('switchRoom', room);
+}
 
-	// append rooms
-	socket.on('updaterooms', function(rooms, current_room) {
-		$('#rooms').empty();
-		$.each(rooms, function(key, value) {
-			if(value == current_room){
-				$('#rooms').append('<div class="col-md-4"><button type="button" class="btn btn-default">' + value + '</button></div>');
-			}
-			else {
-				$('#rooms').append('<div class="col-md-4"><a class="btn btn-danger" href="#" onclick="switchRoom(\''+value+'\')">' + value + '</a></div>');
-			}
-		});
-	});
-
-	function switchRoom(room){
-		socket.emit('switchRoom', room);
-	}
-
-    socket.on('updateusers', function(data) {
-          $('#users').empty();
-          $.each(data, function(key, value) {
-                 $('#users').append('<div>' + key + '</div>');
-                 });
-          });
-
-	$(function(){
-		$('#datasend').click( function() {
-			var message = $('#data').val();
-			$('#data').val('');
-			socket.emit('sendchat', message);
-		});
-
-		$('#data').keypress(function(e) {
-			if(e.which == 13) {
-				$(this).blur();
-				$('#datasend').focus().click();
-			}
-		});
-	});
+socket.on('updateusers', function(data) {
+    $('#users').empty();
+    $.each(data, function(key, value) {
+        $('#users').append('<li><a href="#"  onclick="changeName(\''+value+'\')">' + key + '</a></li>');
+    });
+});
+      
+$(document).ready(function(){
+    $('form').submit(function(event){
+        event.preventDefault();
+    });
+    $('#msgSend').on('click', function (e) {
+        var message = $('#msg').val();
+        console.log(message);
+        socket.emit('sendchat', message);
+        $('#msg').val('');
+    });
+    
+    $('#msg').keypress(function(e) {
+        //e.preventDefault();
+        if(e.which == 13) {
+             $(this).blur();
+             $('#msgSend').focus().click();
+        }
+    });
+});
 </script>
-</head>
-<body>
-<header>
-  <div class="row">
-    <p style="padding:10px;"></p>
-	<h4>ROOMS</h4>
-	<div id="rooms" class="rooms"></div>
-  </div>
-</header>
-<hr>
-<div class="container">
-  <div class="row">
-      <b>USERS</b>
-      <div id="users"></div>
-      <hr>
-	  <div id="conversation"></div>
-    </div>
-  </div>
-</div>
-<footer class="row-footer">
-    <div class="input-group" style="margin: 0 auto;">
-        <input id="data" class="form-control" style="width:600px;" />
-        <input type="button" class="btn btn-info" id="datasend" value="send" />
-    </div>
-</footer>
+
 </body>
+
 </html>

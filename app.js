@@ -21,6 +21,7 @@ function handler (req, res) {
 var usernames = {};
 
 var rooms = ['room1','room2','room3'];
+//var rooms = {};
 
 io.sockets.on('connection', function (socket) {
 
